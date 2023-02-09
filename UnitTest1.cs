@@ -1,37 +1,67 @@
-using EmployeePayrollServiceSQL;
-
-namespace EmpPayrollProject
+using Newtonsoft.Json;
+using RestSharp;
+namespace RestSharpTestCase
 {
-    [TestClass]
-    public class UnitTest1
+    public class Employee
     {
-        [TestMethod]
-        public void Given10Employee_WhenAddedToList_ShouldMaatchEmployeeEntries()
+        public int id { get; set; }
+
+        public string name { get; set; }
+
+        public string email { get; set; }
+    }
+    [TestClass]
+    public class RestSharp
+    {
+        Restclient;
+        [TestInitialize]
+        public void Setup()
         {
-            List<EmployeeDetails> employeeDetails = new List<EmployeeDetails>();
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 1, EmployeeName: "Viraj", PhoneNumber: "9999999999", Address: "Panvel", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Panvel", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 2, EmployeeName: "Vaibhav", PhoneNumber: "9999999999", Address: "Calgary", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Calgary", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 3, EmployeeName: "Varad", PhoneNumber: "9999999999", Address: "Alibag", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Alibag", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 4, EmployeeName: "Mayuri", PhoneNumber: "9999999999", Address: "Sagaon", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Sagaon", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 5, EmployeeName: "Mitali", PhoneNumber: "9999999999", Address: "Karjat", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Karjat", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 6, EmployeeName: "Ram", PhoneNumber: "9999999999", Address: "Neral", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Neral", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 7, EmployeeName: "Shyam", PhoneNumber: "9999999999", Address: "Uran", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Uran", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 8, EmployeeName: "Raju", PhoneNumber: "9999999999", Address: "Shelu", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Shelu", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 9, EmployeeName: "Babu", PhoneNumber: "9999999999", Address: "Pali", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Pali", Country: "India"));
-            employeeDetails.Add(new EmployeeDetails(EmployeeID: 10, EmployeeName: "Pratik", PhoneNumber: "9999999999", Address: "Mahad", Department: "Engineer", Gender: 'M', BasicPay: 10000, Deductions: 200, TaxablePay: 2000, Tax: 1000, NetPay: 6800, City: "Mahad", Country: "India"));
-
-            EmployeePayrollOperations employeePayrollOperations = new EmployeePayrollOperations();
-            DateTime startDateTime = DateTime.Now;
-            employeePayrollOperations.addEmployeeToPayroll(employeeDetails);
-            DateTime stopDateTime = DateTime.Now;
-            Console.WriteLine("Duration without thread: " + (stopDateTime - startDateTime));
-
-            DateTime startDateTimeThread = DateTime.Now;
-            employeePayrollOperations.addEmployeeToPayrollWithThread(employeeDetails);
-            DateTime stopDateTimeThread = DateTime.Now;
-            Console.WriteLine("Duration with Thread: " + (stopDateTimeThread - startDateTimeThread));
-
-
+            client = new RestClient("http://localhost:4000");
         }
+
+        private IRestResponse getEmployeeList()
+        {
+            RestRequest request = new RestRequest("/employees", Method.GET);
+            IRestResponse response = client.Execute(request);
+            return response;
+        }
+
+        [TestMethod]
+        public void onCallingGetAPI_ReturnEmployeeList()
+
+        {
+            IRestResponse response = getEmployeeList();
+            Assert.AreEqual(response.StatusCode, System.Net.HttpStatusCode.OK);
+            List<Employee> dataResponse = JsonConvert.DeserializeObject<List<Employee>>(response.Content);
+            Assert.AreEqual(2, dataResponse.Count);
+        }
+
+
+
+        [TestMethod]
+        public void givenEmployee_OnPost_ShouldReturnAddEmployee()
+        {
+            RestRequest request = new RestRequest("/employees", Method.POST);
+            System.Text.Json.Nodes.JsonObject jsonObject = new System.Text.Json.Nodes.JsonObject();
+
+            jsonObject.Add("name", "Clark");
+            jsonObject.Add("email", "clk123@gmail.com");
+
+            request.AddParameter("application/json", jsonObject, ParameterType.RequestBody);
+
+            IRestResponse response = client.Execute(request);
+
+            Assert.AreEqual(response.StatusCode, System.Net.HttpStatusCode.Created);
+
+            Employee dataresponse = JsonConvert.DeserializeObject<Employee>(response.Content);
+
+            Assert.AreEqual("Clark", dataresponse.name);
+            Assert.AreEqual("clk123@gmail.com", dataresponse.email);
+
+            Console.WriteLine(response.Content);
+        }
+
+
     }
 }
